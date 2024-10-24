@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import dataConectEntregas from 'src/database/conectandoEntregas';
-import dataConnectUsuarios from 'src/database/conectUsers';
-import { entregasTipo } from 'src/types/entregasTypes';
-import { usuarioTipo } from 'src/types/userTypes';
+import dataConectEntregas from '../../dataBase/conectandoEntregas';
+import dataConnectUsuarios from '../../dataBase/conectUsers';
+import { entregasTipo } from '../../types/entregasTypes';
+import { usuarioTipo } from '../../types/userTypes';
 
 @Injectable()
 export class BdServicesService {
