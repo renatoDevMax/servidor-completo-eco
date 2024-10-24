@@ -11,7 +11,7 @@ import { BdServicesService } from '../modules/bd-services/bd-services.services';
 
 @WebSocketGateway({
   cors: {
-    origin: 'http://localhost:3001', // Substitua pelo domínio do seu aplicativo Next.js
+    origin: '*', // Substitua pelo domínio do seu aplicativo Next.js
     credentials: true,
   },
 })
