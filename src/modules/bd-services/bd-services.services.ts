@@ -42,7 +42,7 @@ export class BdServicesService {
   async todasEntregasBancoDados() {
     const conexaoEntregas = await dataConectEntregas();
     const modeloEntregas = conexaoEntregas.model('entregas');
-    const todasEntregas = await modeloEntregas.find();
+    const todasEntregas = await modeloEntregas.find({});
     console.log('Pegando todas entregas do Banco de Dados.');
     return todasEntregas;
   }
@@ -60,6 +60,22 @@ export class BdServicesService {
     const conexaoEntregas = await dataConectEntregas();
     const modeloEntregas = conexaoEntregas.model('entregas');
     const todasEntregas = await modeloEntregas.find({ dia: dataHoje });
+    console.log('Pegando todas entregas do Banco de Dados.');
+    return todasEntregas;
+  }
+
+  async criandoEntrega(entrega: entregasTipo) {
+    const connEntrega = await dataConectEntregas();
+    const modelEntrega = connEntrega.model('entregas');
+
+    const entregaGerada = new modelEntrega(entrega);
+    await entregaGerada.save().then(() => {
+      console.log('salvo com sucesso!');
+    });
+    const dataHoje = this.dataDeHoje();
+    const todasEntregas = await modelEntrega.find({
+      dia: dataHoje,
+    });
     console.log('Pegando todas entregas do Banco de Dados.');
     return todasEntregas;
   }

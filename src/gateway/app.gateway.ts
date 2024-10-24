@@ -22,6 +22,7 @@ export class AppGateway
 
   constructor(private readonly bdServicesService: BdServicesService) {}
 
+  /**Verficando as conexões com o usuário */
   afterInit(server: Server) {
     this.logger.log('Initialized');
   }
@@ -33,6 +34,8 @@ export class AppGateway
   handleDisconnect(client: Socket) {
     this.logger.log('Cliente desconectado: ' + client.id);
   }
+
+  /**Processos pertinentes ao usuário */
 
   @SubscribeMessage('Autenticar Usuario')
   async handleAutenticarUsuario(client: Socket, usuario: any) {
@@ -52,7 +55,8 @@ export class AppGateway
   @SubscribeMessage('Buscar Entregas')
   async handleBuscarEntregas(client: Socket, callBack: Function) {
     const minhasEntregas = await this.bdServicesService.entregasDoDia();
-    callBack(minhasEntregas);
+    console.log(minhasEntregas);
+    client.emit('Entregas Buscadas', minhasEntregas);
   }
 
   @SubscribeMessage('Atualizar Entrega')
@@ -60,6 +64,11 @@ export class AppGateway
     const todasEntregas =
       await this.bdServicesService.atualziandoEntregas(entregaUpdate);
     client.emit('Entregas Atualizadas', todasEntregas);
+  }
+
+  @SubscribeMessage('Criar Entrega')
+  async handleGerarEntrega(client: Socket, entregaNova) {
+    const minhasEntregas = await this.bdServicesService.entregasDoDia();
   }
 
   // @SubscribeMessage('Mensagem Chegada Cliente')
