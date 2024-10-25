@@ -8,6 +8,8 @@ import {
 import { Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
 import { BdServicesService } from '../modules/bd-services/bd-services.services';
+import { entregasTipo } from 'src/types/entregasTypes';
+import { clientesTipo } from 'src/types/clientesType';
 
 @WebSocketGateway({
   cors: {
@@ -53,22 +55,74 @@ export class AppGateway
   }
 
   @SubscribeMessage('Buscar Entregas')
-  async handleBuscarEntregas(client: Socket, callBack: Function) {
+  async handleBuscarEntregas(client: Socket) {
     const minhasEntregas = await this.bdServicesService.entregasDoDia();
-    console.log(minhasEntregas);
-    client.emit('Entregas Buscadas', minhasEntregas);
+    console.log(
+      `Entregas do dia resgatadas: ${minhasEntregas.length} entregas`,
+    );
+    client.emit('Atualizando entregas', minhasEntregas);
   }
 
-  @SubscribeMessage('Atualizar Entrega')
-  async handleAtualizarEntrega(client: Socket, entregaUpdate: any) {
-    const todasEntregas =
-      await this.bdServicesService.atualziandoEntregas(entregaUpdate);
-    client.emit('Entregas Atualizadas', todasEntregas);
+  @SubscribeMessage('Buscar Clientes')
+  async handleBuscarClientes(client: Socket) {
+    const todosClientes = await this.bdServicesService.meusClientes();
+    client.emit('Atualizando clientes', todosClientes);
   }
 
   @SubscribeMessage('Criar Entrega')
-  async handleGerarEntrega(client: Socket, entregaNova) {
+  async handleGerarEntrega(client: Socket, entregaNova: entregasTipo) {
+    const entregasDoDia =
+      await this.bdServicesService.criandoEntrega(entregaNova);
     const minhasEntregas = await this.bdServicesService.entregasDoDia();
+    client.emit('Atualizando entregas', minhasEntregas);
+  }
+
+  @SubscribeMessage('Atualizar Entrega')
+  async handleAtualizarEntrega(client: Socket, entregaUpdate: entregasTipo) {
+    const todasEntregas =
+      await this.bdServicesService.atualziandoEntregas(entregaUpdate);
+    client.emit('Atualizando entregas', todasEntregas);
+  }
+
+  @SubscribeMessage('Deletar Entrega')
+  async handleDeletarEntrega(client: Socket, entregaDelete: entregasTipo) {
+    const todasEntregas =
+      await this.bdServicesService.deletarEntrega(entregaDelete);
+    client.emit('Atualizando entregas', todasEntregas);
+  }
+
+  @SubscribeMessage('Buscar Entregas Relatorio')
+  async handleEntregasRelatorio(client: Socket) {
+    const todasEntregasRel =
+      await this.bdServicesService.todasEntregasRelatorio();
+    client.emit('Atualizando entregas relatorio', todasEntregasRel);
+  }
+
+  @SubscribeMessage('Criar Cliente')
+  async handleCriandoCliente(client: Socket, clienteRecebido: clientesTipo) {
+    const todosClientes =
+      await this.bdServicesService.criandoCliente(clienteRecebido);
+    client.emit('Atualizando clientes', todosClientes);
+  }
+
+  @SubscribeMessage('Atualizar Cliente')
+  async handleAtualizarCliente(client: Socket, clienteRecebido: clientesTipo) {
+    const todosClientes =
+      await this.bdServicesService.atualizandoCliente(clienteRecebido);
+    client.emit('Atualizando clientes', todosClientes);
+  }
+
+  @SubscribeMessage('Deletar Cliente')
+  async handleDeletarCliente(client: Socket, clienteRecebido: clientesTipo) {
+    const todosClientes =
+      await this.bdServicesService.deletandoCliente(clienteRecebido);
+    client.emit('Atualizando clientes', todosClientes);
+  }
+
+  @SubscribeMessage('solicitar-usuarios')
+  async handleSolicitarUsuarios(client: Socket) {
+    const todosClientes = await this.bdServicesService.todosUsuariosBanco();
+    client.emit('todos-usuarios', todosClientes);
   }
 
   // @SubscribeMessage('Mensagem Chegada Cliente')
