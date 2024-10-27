@@ -10,6 +10,7 @@ import { Socket, Server } from 'socket.io';
 import { BdServicesService } from '../modules/bd-services/bd-services.services';
 import { entregasTipo } from 'src/types/entregasTypes';
 import { clientesTipo } from 'src/types/clientesType';
+import { usuarioTipo } from 'src/types/userTypes';
 
 @WebSocketGateway({
   cors: {
@@ -21,12 +22,14 @@ export class AppGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   private logger: Logger = new Logger('AppGateway');
+  private server: Server; // Declare server here
 
   constructor(private readonly bdServicesService: BdServicesService) {}
 
   /**Verficando as conexões com o usuário */
   afterInit(server: Server) {
     this.logger.log('Initialized');
+    this.server = server;
   }
 
   handleConnection(client: Socket, ...args: any[]) {
@@ -54,6 +57,13 @@ export class AppGateway
     this.logger.log('Um usuário abandonou a conexão');
   }
 
+  @SubscribeMessage('Localizar Entregador')
+  async handleLocalizarUsuario(client: Socket, usuario: usuarioTipo) {
+    const todosUsuarios =
+      await this.bdServicesService.atualizandoUsuarios(usuario);
+    this.server.emit('todos-usuarios', todosUsuarios);
+  }
+
   @SubscribeMessage('Buscar Entregas')
   async handleBuscarEntregas(client: Socket) {
     const minhasEntregas = await this.bdServicesService.entregasDoDia();
@@ -74,21 +84,21 @@ export class AppGateway
     const entregasDoDia =
       await this.bdServicesService.criandoEntrega(entregaNova);
     const minhasEntregas = await this.bdServicesService.entregasDoDia();
-    client.emit('Atualizando entregas', minhasEntregas);
+    this.server.emit('Atualizando entregas', minhasEntregas);
   }
 
   @SubscribeMessage('Atualizar Entrega')
   async handleAtualizarEntrega(client: Socket, entregaUpdate: entregasTipo) {
     const todasEntregas =
       await this.bdServicesService.atualziandoEntregas(entregaUpdate);
-    client.emit('Atualizando entregas', todasEntregas);
+    this.server.emit('Atualizando entregas', todasEntregas);
   }
 
   @SubscribeMessage('Deletar Entrega')
   async handleDeletarEntrega(client: Socket, entregaDelete: entregasTipo) {
     const todasEntregas =
       await this.bdServicesService.deletarEntrega(entregaDelete);
-    client.emit('Atualizando entregas', todasEntregas);
+    this.server.emit('Atualizando entregas', todasEntregas);
   }
 
   @SubscribeMessage('Buscar Entregas Relatorio')

@@ -1,16 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import dataConectEntregas from '../../dataBase/conectandoEntregas';
-import dataConnectUsuarios from '../../dataBase/conectUsers';
 import { entregasTipo } from '../../types/entregasTypes';
 import { usuarioTipo } from '../../types/userTypes';
-import dataConectClientes from 'src/dataBase/conectandoClientes';
 import { clientesTipo } from 'src/types/clientesType';
+import { entregaSchema } from '../bd-schemas/entregaModels';
+import { connectToDatabase } from 'src/dataBase/connectBd';
+import { clientesSchema } from '../bd-schemas/clienteModel';
+import { usuarioSchema } from '../bd-schemas/usuarioModelo';
 
 @Injectable()
 export class BdServicesService {
   async autenticandoUsuario(dados: { userName: string; senha: string }) {
-    const conexaoUsuarios = await dataConnectUsuarios();
-    const modeloUsuarios = conexaoUsuarios.model('usuarios');
+    const conexaoUsuarios = await connectToDatabase();
+    const modeloUsuarios = conexaoUsuarios.model(
+      'usuarios',
+      usuarioSchema,
+      'usuariosSchema',
+    );
     const usuarioEncontrado = (await modeloUsuarios.findOne({
       userName: dados.userName,
       senha: dados.senha,
@@ -21,16 +26,24 @@ export class BdServicesService {
   }
 
   async todosUsuariosBd() {
-    const conexaoUsuarios = await dataConnectUsuarios();
-    const modeloUsuarios = conexaoUsuarios.model('usuarios');
+    const conexaoUsuarios = await connectToDatabase();
+    const modeloUsuarios = conexaoUsuarios.model(
+      'usuarios',
+      usuarioSchema,
+      'usuariosSchema',
+    );
     const allUsers = await modeloUsuarios.find();
     console.log('Pegando todos usuários do banco de dados.');
     return allUsers;
   }
 
   async atualizandoUsuarios(usuarioUppdate: usuarioTipo) {
-    const conexaoUsuarios = await dataConnectUsuarios();
-    const modeloUsuarios = conexaoUsuarios.model('usuarios');
+    const conexaoUsuarios = await connectToDatabase();
+    const modeloUsuarios = conexaoUsuarios.model(
+      'usuarios',
+      usuarioSchema,
+      'usuariosSchema',
+    );
     const userEntregaBD = await modeloUsuarios.updateOne(
       { userName: usuarioUppdate.userName },
       { $set: usuarioUppdate },
@@ -39,6 +52,9 @@ export class BdServicesService {
       'Status da atualização da coordenada do usuário: ' +
         userEntregaBD.acknowledged,
     );
+    const allUsers = await modeloUsuarios.find();
+    console.log('Pegando todos usuários do banco de dados.');
+    return allUsers;
   }
 
   dataDeHoje() {
@@ -51,23 +67,31 @@ export class BdServicesService {
 
   async entregasDoDia() {
     const dataHoje = this.dataDeHoje();
-    const conexaoEntregas = await dataConectEntregas();
-    const modeloEntregas = conexaoEntregas.model('entregas');
-    const todasEntregas = await modeloEntregas.find({ dia: dataHoje });
+    const conexao = await connectToDatabase();
+    const conexaoEntregas = conexao.model(
+      'entregas',
+      entregaSchema,
+      'entregaschemas',
+    );
+    const todasEntregas = await conexaoEntregas.find({ dia: dataHoje });
     console.log('Pegando todas entregas do Banco de Dados.');
     return todasEntregas;
   }
 
   async criandoEntrega(entrega: entregasTipo) {
-    const connEntrega = await dataConectEntregas();
-    const modelEntrega = connEntrega.model('entregas');
+    const conexao = await connectToDatabase();
+    const connEntrega = conexao.model(
+      'entregas',
+      entregaSchema,
+      'entregaschemas',
+    );
 
-    const entregaGerada = new modelEntrega(entrega);
+    const entregaGerada = new connEntrega(entrega);
     await entregaGerada.save().then(() => {
       console.log('salvo com sucesso!');
     });
     const dataHoje = this.dataDeHoje();
-    const todasEntregas = await modelEntrega.find({
+    const todasEntregas = await connEntrega.find({
       dia: dataHoje,
     });
     console.log('Retornando as entregas do dia.');
@@ -77,8 +101,12 @@ export class BdServicesService {
   async atualziandoEntregas(entregaUpdate: entregasTipo) {
     console.log(entregaUpdate);
     const dataHoje = this.dataDeHoje();
-    const connEntrega = await dataConectEntregas();
-    const modelEntrega = connEntrega.model('entregas');
+    const conexao = await connectToDatabase();
+    const modelEntrega = conexao.model(
+      'entregas',
+      entregaSchema,
+      'entregaschemas',
+    );
     const userEntregaBD = await modelEntrega.updateOne(
       { id: entregaUpdate.id },
       { $set: entregaUpdate },
@@ -97,8 +125,12 @@ export class BdServicesService {
   async deletarEntrega(entregaDelete: entregasTipo) {
     const dataHoje = this.dataDeHoje();
     console.log(entregaDelete);
-    const connEntrega = await dataConectEntregas();
-    const modelEntrega = connEntrega.model('entregas');
+    const conexao = await connectToDatabase();
+    const modelEntrega = conexao.model(
+      'entregas',
+      entregaSchema,
+      'entregaschemas',
+    );
     const entregaGerada = new modelEntrega(entregaDelete);
     const retornoDel = await modelEntrega.deleteOne({ id: entregaDelete.id });
 
@@ -114,24 +146,37 @@ export class BdServicesService {
   }
 
   async meusClientes() {
-    const connClientes = await dataConectClientes();
-    const modelClientes = connClientes.model('clientesEco');
+    // const connClientes = await dataConectClientes();
+    const conexao = await connectToDatabase();
+    const modelClientes = conexao.model(
+      'clientesEco',
+      clientesSchema,
+      'clientesEco',
+    );
     console.log('Clientes solicitados do banco de dados');
     const todosClientes = await modelClientes.find({});
     return todosClientes;
   }
 
   async todasEntregasRelatorio() {
-    const connEntrega = await dataConectEntregas();
-    const modelEntrega = connEntrega.model('entregas');
+    const conexao = await connectToDatabase();
+    const modelEntrega = conexao.model(
+      'entregas',
+      entregaSchema,
+      'entregaschemas',
+    );
     console.log('Entregas solicitadas do banco de dados para relatorio');
     const entregasRelatorio = await modelEntrega.find({});
     return entregasRelatorio;
   }
 
   async criandoCliente(cliente: clientesTipo) {
-    const connClientes = await dataConectClientes();
-    const modelClientes = connClientes.model('clientesEco');
+    const conexao = await connectToDatabase();
+    const modelClientes = conexao.model(
+      'clientesEco',
+      clientesSchema,
+      'clientesEco',
+    );
 
     const clienteGerado = new modelClientes(cliente);
     await clienteGerado.save().then(() => {
@@ -144,8 +189,12 @@ export class BdServicesService {
 
   async atualizandoCliente(cliente: clientesTipo) {
     console.log(cliente);
-    const connClientes = await dataConectClientes();
-    const modelClientes = connClientes.model('clientesEco');
+    const conexao = await connectToDatabase();
+    const modelClientes = conexao.model(
+      'clientesEco',
+      clientesSchema,
+      'clientesEco',
+    );
     const clienteGerado = new modelClientes(cliente);
     const userCliente = await clienteGerado.updateOne(
       { id: cliente.id }, // Encontra o documento pelo ID
@@ -168,13 +217,17 @@ export class BdServicesService {
 
   async deletandoCliente(cliente: clientesTipo) {
     console.log(cliente);
-    const connClientes = await dataConectClientes();
-    const modelClientes = connClientes.model('clientesEco');
+    const conexao = await connectToDatabase();
+    const modelClientes = conexao.model(
+      'clientesEco',
+      clientesSchema,
+      'clientesEco',
+    );
     const clienteGerado = new modelClientes(cliente);
     const retornoDel = await clienteGerado.deleteOne({ id: cliente.id });
 
     if (retornoDel.deletedCount === 0) {
-      console.log('Entrega não encontrada');
+      console.log('Cliente não encontrado');
     }
 
     const todosClientes = await modelClientes.find({});
@@ -185,8 +238,12 @@ export class BdServicesService {
 
   async todosUsuariosBanco() {
     /*** Estabelecer conexão com o banco de dados de usuários. */
-    const conexaoUsuarios = await dataConnectUsuarios();
-    const modeloUsuarios = conexaoUsuarios.model('usuarios');
+    const conexao = await connectToDatabase();
+    const modeloUsuarios = conexao.model(
+      'usuarios',
+      usuarioSchema,
+      'usuariosSchema',
+    );
     /*** Fazer a busca pelo usuário no banco de dados. */
     const allUsers = await modeloUsuarios.find({});
     console.log('Pegando todos usuários do banco de dados.');
