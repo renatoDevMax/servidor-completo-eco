@@ -135,6 +135,8 @@ export class AppGateway
     client.emit('todos-usuarios', todosClientes);
   }
 
+  //Adicionando algum comentario apenas para garantir o commit
+
   // @SubscribeMessage('Mensagem Chegada Cliente')
   // handleMensagemChegadaCliente(client: Socket, dadosMensagem: any) {
   //   this.bdServicesService.enviandoMensagem(dadosMensagem);
