@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 export const entregaSchema = new mongoose.Schema({
   id: {
@@ -25,4 +25,5 @@ export const entregaSchema = new mongoose.Schema({
   pagamento: { type: String, required: true },
   entregador: { type: String, required: true },
   volume: { type: String, required: true },
+  observacoes: { type: String, required: false },
 });

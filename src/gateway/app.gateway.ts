@@ -76,6 +76,7 @@ export class AppGateway
   @SubscribeMessage('Buscar Clientes')
   async handleBuscarClientes(client: Socket) {
     const todosClientes = await this.bdServicesService.meusClientes();
+    console.log(`Clientes resgatados: ${todosClientes.length} clientes`);
     client.emit('Atualizando clientes', todosClientes);
   }
 
