@@ -22,14 +22,25 @@ export class BdServicesService implements OnModuleInit {
   constructor(private readonly whatsappService: WhatsAppService) {}
 
   async onModuleInit() {
-    // Aguarda o WhatsApp estar pronto
-    await this.whatsappService.onReady();
+    try {
+      // Aguarda o WhatsApp estar pronto
+      console.log('Aguardando WhatsApp inicializar...');
+      await this.whatsappService.onReady();
 
-    // Envia mensagem de inicialização
-    await this.enviandoMensagem({
-      contato: '554188996458@c.us',
-      mensagem: 'Servidor inicializado, WhatsApp funcionando com sucesso.',
-    });
+      // Aguarda um tempo adicional para garantir que está tudo pronto
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Tenta enviar a mensagem
+      console.log('Tentando enviar mensagem de inicialização...');
+      await this.enviandoMensagem({
+        contato: '554188996458@c.us',
+        mensagem: 'Servidor inicializado, WhatsApp funcionando com sucesso.',
+      });
+      console.log('Mensagem de inicialização enviada com sucesso!');
+    } catch (error) {
+      console.error('Erro durante a inicialização:', error);
+      // Não vamos deixar o erro parar a inicialização do módulo
+    }
   }
 
   async autenticandoUsuario(dados: { userName: string; senha: string }) {
@@ -279,7 +290,12 @@ export class BdServicesService implements OnModuleInit {
     mensagem: string;
   }): Promise<void> {
     try {
-      await this.whatsappService.sendMessage('4188996458@c.us', dados.mensagem);
+      // Verifica se o WhatsApp está pronto antes de tentar enviar
+      if (!(await this.whatsappService.isClientReady())) {
+        console.log('Aguardando WhatsApp ficar pronto...');
+        await this.whatsappService.onReady();
+      }
+      await this.whatsappService.sendMessage(dados.contato, dados.mensagem);
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
       throw error;

@@ -12,41 +12,65 @@ export class WhatsAppService {
   public qrCode$ = new Subject<string>();
   private reconnectAttempts = 0;
   private readonly MAX_RECONNECT_ATTEMPTS = 5;
+  private isReady = false;
 
   constructor() {
     this.initializeClient();
   }
 
   private async initializeClient() {
-    const browser = await puppeteer.launch({
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu',
-      ],
-      headless: true,
-    });
+    try {
+      const browser = await puppeteer.launch({
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--single-process',
+          '--disable-gpu',
+        ],
+        headless: true,
+      });
 
-    this.client = new Client({
-      authStrategy: new LocalAuth({
-        dataPath: process.env.WHATSAPP_DATA_PATH || './whatsapp-auth',
-      }),
-      puppeteer: {
-        browserWSEndpoint: browser.wsEndpoint(),
-      },
-    });
+      this.client = new Client({
+        authStrategy: new LocalAuth({
+          dataPath: process.env.WHATSAPP_DATA_PATH || './whatsapp-auth',
+          clientId: 'eco-clean-whatsapp',
+        }),
+        puppeteer: {
+          browserWSEndpoint: browser.wsEndpoint(),
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process',
+            '--disable-gpu',
+          ],
+        },
+        webVersionCache: {
+          type: 'none', // Desabilita o cache da versão web
+        },
+        webVersion: '2.2347.52', // Especifica uma versão fixa do WhatsApp Web
+      });
 
-    this.readyPromise = new Promise((resolve) => {
-      this.resolveReady = resolve;
-    });
+      this.readyPromise = new Promise((resolve) => {
+        this.resolveReady = resolve;
+      });
 
-    this.setupEventListeners();
-    this.client.initialize().catch(this.handleInitializationError.bind(this));
+      this.setupEventListeners();
+      await this.client.initialize().catch((err) => {
+        console.error('Erro na inicialização do cliente:', err);
+        throw err;
+      });
+    } catch (error) {
+      console.error('Erro na inicialização do cliente:', error);
+      this.handleInitializationError(error);
+    }
   }
 
   private setupEventListeners() {
@@ -59,18 +83,25 @@ export class WhatsAppService {
     this.client.on('ready', () => {
       console.log('WhatsApp Client está pronto!');
       this.reconnectAttempts = 0;
+      this.isReady = true;
       this.resolveReady();
       this.qrCode$.next(null);
     });
 
-    this.client.on('disconnected', () => {
-      console.log('WhatsApp Client desconectado');
+    this.client.on('disconnected', (reason) => {
+      console.log('WhatsApp Client desconectado:', reason);
+      this.isReady = false;
       this.handleDisconnection();
     });
 
-    this.client.on('auth_failure', () => {
-      console.log('Falha na autenticação do WhatsApp');
+    this.client.on('auth_failure', (msg) => {
+      console.log('Falha na autenticação do WhatsApp:', msg);
+      this.isReady = false;
       this.handleAuthFailure();
+    });
+
+    this.client.on('loading_screen', (percent, message) => {
+      console.log('Carregando WhatsApp:', percent, message);
     });
   }
 
@@ -97,10 +128,16 @@ export class WhatsAppService {
   }
 
   async onReady(): Promise<void> {
+    if (this.isReady) {
+      return Promise.resolve();
+    }
     return this.readyPromise;
   }
 
   async sendMessage(to: string, message: string): Promise<void> {
+    if (!this.isReady || !this.client) {
+      throw new Error('Cliente WhatsApp não está pronto');
+    }
     await this.client.sendMessage(to, message);
   }
 
@@ -109,15 +146,17 @@ export class WhatsAppService {
     latitude: number,
     longitude: number,
   ): Promise<void> {
-    const location: {
-      latitude: string;
-      longitude: string;
-      description: string;
-    } = {
+    if (!this.isReady || !this.client) {
+      throw new Error('Cliente WhatsApp não está pronto');
+    }
+    const location: Location = {
       latitude: latitude.toString(),
       longitude: longitude.toString(),
-      description: 'Localização da entrega',
     };
     await this.client.sendMessage(to, location);
+  }
+
+  async isClientReady(): Promise<boolean> {
+    return this.isReady;
   }
 }
