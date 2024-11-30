@@ -7,6 +7,7 @@ import { connectToDatabase } from 'src/dataBase/connectBd';
 import { clientesSchema } from '../bd-schemas/clienteModel';
 import { usuarioSchema } from '../bd-schemas/usuarioModelo';
 import { WhatsAppService } from '../../services/whatsapp.service';
+import { DeleteResult } from 'mongodb';
 
 interface LocalizacaoEntregadorDTO {
   entregadorNome: string;
@@ -245,8 +246,9 @@ export class BdServicesService implements OnModuleInit {
       clientesSchema,
       'clientesEco',
     );
-    const clienteGerado = new modelClientes(cliente);
-    const retornoDel = await clienteGerado.deleteOne({ id: cliente.id });
+    const retornoDel = (await modelClientes.deleteOne({
+      id: cliente.id,
+    })) as DeleteResult;
 
     if (retornoDel.deletedCount === 0) {
       console.log('Cliente não encontrado');
