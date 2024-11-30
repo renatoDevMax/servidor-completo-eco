@@ -1,0 +1,16 @@
+{
+  "name": "seu-app-name",
+  "description": "Seu app description",
+  "keywords": ["node", "nestjs", "whatsapp"],
+  "env": {
+    "NODE_ENV": {
+      "description": "Environment for the application",
+      "value": "production"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}

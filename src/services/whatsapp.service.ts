@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Client, LocalAuth, Location } from 'whatsapp-web.js';
 import * as qrcode from 'qrcode-terminal';
 import { Subject } from 'rxjs';
+import * as puppeteer from 'puppeteer';
 
 @Injectable()
 export class WhatsAppService {
@@ -16,25 +17,27 @@ export class WhatsAppService {
     this.initializeClient();
   }
 
-  private initializeClient() {
+  private async initializeClient() {
+    const browser = await puppeteer.launch({
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu',
+      ],
+      headless: 'new',
+    });
+
     this.client = new Client({
       authStrategy: new LocalAuth({
         dataPath: process.env.WHATSAPP_DATA_PATH || './whatsapp-auth',
       }),
       puppeteer: {
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--disable-software-rasterizer',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process',
-        ],
-        executablePath: process.env.GOOGLE_CHROME_BIN || undefined,
+        browserWSEndpoint: browser.wsEndpoint(),
       },
     });
 
