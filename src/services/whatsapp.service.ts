@@ -27,12 +27,14 @@ export class WhatsAppService {
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-software-rasterizer',
           '--disable-accelerated-2d-canvas',
           '--no-first-run',
           '--no-zygote',
           '--single-process',
-          '--disable-gpu',
         ],
+        executablePath: process.env.GOOGLE_CHROME_BIN || undefined,
       },
     });
 
