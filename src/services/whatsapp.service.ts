@@ -29,7 +29,7 @@ export class WhatsAppService {
         '--single-process',
         '--disable-gpu',
       ],
-      headless: 'new',
+      headless: true,
     });
 
     this.client = new Client({
