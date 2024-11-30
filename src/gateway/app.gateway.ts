@@ -136,6 +136,35 @@ export class AppGateway
     client.emit('todos-usuarios', todosClientes);
   }
 
+  @SubscribeMessage('Enviar Mensagem')
+  async handleEnviarMensagem(
+    client: Socket,
+    dados: { contato: string; mensagem: string },
+  ) {
+    try {
+      await this.bdServicesService.enviandoMensagem(dados);
+      client.emit('Mensagem Enviada', { success: true });
+    } catch (error) {
+      client.emit('Erro Mensagem', { error: error.message });
+    }
+  }
+
+  @SubscribeMessage('Obter Localizacao')
+  async handleObterLocalizacao(
+    client: Socket,
+    dados: {
+      entregadorNome: string;
+      localizacao: { latitude: number; longitude: number };
+    },
+  ) {
+    try {
+      await this.bdServicesService.obtendoLocalizacaoEntrega(dados);
+      client.emit('Localizacao Enviada', { success: true });
+    } catch (error) {
+      client.emit('Erro Localizacao', { error: error.message });
+    }
+  }
+
   //Adicionando algum comentario apenas para garantir o commit
 
   // @SubscribeMessage('Mensagem Chegada Cliente')

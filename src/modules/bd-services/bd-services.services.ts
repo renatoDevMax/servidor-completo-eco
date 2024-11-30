@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { entregasTipo } from '../../types/entregasTypes';
 import { usuarioTipo } from '../../types/userTypes';
 import { clientesTipo } from 'src/types/clientesType';
@@ -6,9 +6,31 @@ import { entregaSchema } from '../bd-schemas/entregaModels';
 import { connectToDatabase } from 'src/dataBase/connectBd';
 import { clientesSchema } from '../bd-schemas/clienteModel';
 import { usuarioSchema } from '../bd-schemas/usuarioModelo';
+import { WhatsAppService } from '../../services/whatsapp.service';
+
+interface LocalizacaoEntregadorDTO {
+  entregadorNome: string;
+  localizacao: {
+    latitude: number;
+    longitude: number;
+  };
+}
 
 @Injectable()
-export class BdServicesService {
+export class BdServicesService implements OnModuleInit {
+  constructor(private readonly whatsappService: WhatsAppService) {}
+
+  async onModuleInit() {
+    // Aguarda o WhatsApp estar pronto
+    await this.whatsappService.onReady();
+
+    // Envia mensagem de inicialização
+    await this.enviandoMensagem({
+      contato: '554188996458@c.us',
+      mensagem: 'Servidor inicializado, WhatsApp funcionando com sucesso.',
+    });
+  }
+
   async autenticandoUsuario(dados: { userName: string; senha: string }) {
     const conexaoUsuarios = await connectToDatabase();
     const modeloUsuarios = conexaoUsuarios.model(
@@ -248,5 +270,35 @@ export class BdServicesService {
     const allUsers = await modeloUsuarios.find({});
     console.log('Pegando todos usuários do banco de dados.');
     return allUsers;
+  }
+
+  async enviandoMensagem(dados: {
+    contato: string;
+    mensagem: string;
+  }): Promise<void> {
+    try {
+      await this.whatsappService.sendMessage('4188996458@c.us', dados.mensagem);
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      throw error;
+    }
+  }
+
+  async obtendoLocalizacaoEntrega(
+    dados: LocalizacaoEntregadorDTO,
+  ): Promise<void> {
+    try {
+      await this.whatsappService.sendLocation(
+        '554188996458@c.us',
+        dados.localizacao.latitude,
+        dados.localizacao.longitude,
+      );
+      console.log(
+        `Localização do entregador ${dados.entregadorNome} enviada com sucesso`,
+      );
+    } catch (error) {
+      console.error('Erro ao enviar localização:', error);
+      throw error;
+    }
   }
 }
