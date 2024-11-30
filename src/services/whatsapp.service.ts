@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Client, LocalAuth, Location } from 'whatsapp-web.js';
 import * as qrcode from 'qrcode-terminal';
+import { Subject } from 'rxjs';
 
 @Injectable()
 export class WhatsAppService {
   private client: Client;
   private readyPromise: Promise<void>;
   private resolveReady: () => void;
+  public qrCode$ = new Subject<string>();
 
   constructor() {
     this.client = new Client({
@@ -23,11 +25,13 @@ export class WhatsAppService {
   private initialize() {
     this.client.on('qr', (qr) => {
       qrcode.generate(qr, { small: true });
+      this.qrCode$.next(qr);
     });
 
     this.client.on('ready', () => {
       console.log('WhatsApp Client está pronto!');
       this.resolveReady();
+      this.qrCode$.next(null);
     });
 
     this.client.initialize();

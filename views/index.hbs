@@ -1,0 +1,26 @@
+<html>
+  <head>
+    <title>WhatsApp QR Code</title>
+    <script
+      src='https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js'
+    ></script>
+    <style>
+      body { display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 100vh; margin: 0; font-family: Arial,
+      sans-serif; } #qrcode { margin-top: 20px; } .message { margin-bottom:
+      20px; font-size: 24px; }
+    </style>
+  </head>
+  <body>
+    <div class='message'>{{message}}</div>
+    {{#if qrCode}}
+      <div id='qrcode'></div>
+      <p>Escaneie o QR Code para conectar o WhatsApp</p>
+      <script>
+        new QRCode(document.getElementById("qrcode"), "{{qrCode}}");
+      </script>
+    {{else}}
+      <p>WhatsApp já está conectado!</p>
+    {{/if}}
+  </body>
+</html>
