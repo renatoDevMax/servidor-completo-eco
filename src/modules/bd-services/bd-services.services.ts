@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { entregasTipo } from '../../types/entregasTypes';
 import { usuarioTipo } from '../../types/userTypes';
 import { clientesTipo } from 'src/types/clientesType';
@@ -6,8 +6,8 @@ import { entregaSchema } from '../bd-schemas/entregaModels';
 import { connectToDatabase } from 'src/dataBase/connectBd';
 import { clientesSchema } from '../bd-schemas/clienteModel';
 import { usuarioSchema } from '../bd-schemas/usuarioModelo';
-import { WhatsAppService } from '../../services/whatsapp.service';
-import { DeleteResult } from 'mongodb';
+import mongoose from 'mongoose';
+import { WhatsAppService } from '../../modules/whatsapp/services/whatsapp.service';
 
 interface LocalizacaoEntregadorDTO {
   entregadorNome: string;
@@ -18,30 +18,8 @@ interface LocalizacaoEntregadorDTO {
 }
 
 @Injectable()
-export class BdServicesService implements OnModuleInit {
+export class BdServicesService {
   constructor(private readonly whatsappService: WhatsAppService) {}
-
-  async onModuleInit() {
-    try {
-      // Aguarda o WhatsApp estar pronto
-      console.log('Aguardando WhatsApp inicializar...');
-      await this.whatsappService.onReady();
-
-      // Aguarda um tempo adicional para garantir que está tudo pronto
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Tenta enviar a mensagem
-      console.log('Tentando enviar mensagem de inicialização...');
-      await this.enviandoMensagem({
-        contato: '554188996458@c.us',
-        mensagem: 'Servidor inicializado, WhatsApp funcionando com sucesso.',
-      });
-      console.log('Mensagem de inicialização enviada com sucesso!');
-    } catch (error) {
-      console.error('Erro durante a inicialização:', error);
-      // Não vamos deixar o erro parar a inicialização do módulo
-    }
-  }
 
   async autenticandoUsuario(dados: { userName: string; senha: string }) {
     const conexaoUsuarios = await connectToDatabase();
@@ -180,7 +158,6 @@ export class BdServicesService implements OnModuleInit {
   }
 
   async meusClientes() {
-    // const connClientes = await dataConectClientes();
     const conexao = await connectToDatabase();
     const modelClientes = conexao.model(
       'clientesEco',
@@ -231,7 +208,7 @@ export class BdServicesService implements OnModuleInit {
     );
     const clienteGerado = new modelClientes(cliente);
     const userCliente = await clienteGerado.updateOne(
-      { id: cliente.id }, // Encontra o documento pelo ID
+      { id: cliente.id },
       {
         $set: cliente,
       },
@@ -252,14 +229,9 @@ export class BdServicesService implements OnModuleInit {
   async deletandoCliente(cliente: clientesTipo) {
     console.log(cliente);
     const conexao = await connectToDatabase();
-    const modelClientes = conexao.model(
-      'clientesEco',
-      clientesSchema,
-      'clientesEco',
-    );
-    const retornoDel = (await modelClientes.deleteOne({
-      id: cliente.id,
-    })) as DeleteResult;
+    const modelClientes = conexao.model('clientesEco', clientesSchema);
+    const clienteGerado = new modelClientes(cliente);
+    const retornoDel = await modelClientes.deleteOne({ id: cliente.id });
 
     if (retornoDel.deletedCount === 0) {
       console.log('Cliente não encontrado');
@@ -267,22 +239,7 @@ export class BdServicesService implements OnModuleInit {
 
     const todosClientes = await modelClientes.find({});
     console.log('Pegando todos os Clientes do Banco de Dados.');
-
     return todosClientes;
-  }
-
-  async todosUsuariosBanco() {
-    /*** Estabelecer conexão com o banco de dados de usuários. */
-    const conexao = await connectToDatabase();
-    const modeloUsuarios = conexao.model(
-      'usuarios',
-      usuarioSchema,
-      'usuariosSchema',
-    );
-    /*** Fazer a busca pelo usuário no banco de dados. */
-    const allUsers = await modeloUsuarios.find({});
-    console.log('Pegando todos usuários do banco de dados.');
-    return allUsers;
   }
 
   async enviandoMensagem(dados: {
@@ -290,32 +247,14 @@ export class BdServicesService implements OnModuleInit {
     mensagem: string;
   }): Promise<void> {
     try {
-      // Verifica se o WhatsApp está pronto antes de tentar enviar
-      if (!(await this.whatsappService.isClientReady())) {
-        console.log('Aguardando WhatsApp ficar pronto...');
-        await this.whatsappService.onReady();
-      }
-      await this.whatsappService.sendMessage(dados.contato, dados.mensagem);
+      // Verifica se o contato já inclui o sufixo @c.us
+      const numeroFormatado = dados.contato.includes('@c.us')
+        ? dados.contato
+        : `${dados.contato}@c.us`;
+
+      await this.whatsappService.sendMessage(numeroFormatado, dados.mensagem);
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
-      throw error;
-    }
-  }
-
-  async obtendoLocalizacaoEntrega(
-    dados: LocalizacaoEntregadorDTO,
-  ): Promise<void> {
-    try {
-      await this.whatsappService.sendLocation(
-        '554188996458@c.us',
-        dados.localizacao.latitude,
-        dados.localizacao.longitude,
-      );
-      console.log(
-        `Localização do entregador ${dados.entregadorNome} enviada com sucesso`,
-      );
-    } catch (error) {
-      console.error('Erro ao enviar localização:', error);
       throw error;
     }
   }

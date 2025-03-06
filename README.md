@@ -97,3 +97,49 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+# Servidor EcoClean WhatsApp
+
+## Deploy no Railway
+
+### Pré-requisitos
+
+- Conta no GitHub
+- Conta no Railway.app
+- Git instalado localmente
+
+### Passos para Deploy
+
+1. Faça fork deste repositório para sua conta do GitHub
+
+2. No Railway.app:
+
+   - Clique em "New Project"
+   - Selecione "Deploy from GitHub repo"
+   - Selecione este repositório
+   - Clique em "Deploy Now"
+
+3. Configure as variáveis de ambiente no Railway (se necessário):
+   - PORT=3000
+
+### Notas Importantes
+
+- O servidor usa Puppeteer para o WhatsApp Web, que já está configurado no Dockerfile
+- A autenticação do WhatsApp é feita via QR Code
+- Os arquivos de sessão são armazenados em `.wwebjs_auth`
+
+### Desenvolvimento Local
+
+```bash
+# Instalar dependências
+npm install
+
+# Rodar em desenvolvimento
+npm run start:dev
+
+# Build para produção
+npm run build
+
+# Rodar em produção
+npm run start:prod
+```
