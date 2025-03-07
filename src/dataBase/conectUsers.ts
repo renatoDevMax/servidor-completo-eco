@@ -1,16 +1,13 @@
 import { usuarioSchema } from '../modules/bd-schemas/usuarioModelo';
 import mongoose from 'mongoose';
+import { DATABASE_CONFIG } from '../config/database.config';
 
 // Create the model instance outside the function
 
 const dataConnectUsuarios = async () => {
-  const uri =
-    'mongodb+srv://renatomaximianojr:R1FL4X6xFM9xE2aX@clusterrenato.asbtntk.mongodb.net/ecoClean?retryWrites=true&w=majority&appName=clusterRenato';
-  const clientOptions = {
-    serverApi: { version: '1', strict: true, deprecationErrors: true },
-  } as mongoose.ConnectOptions;
-
-  const conn = await mongoose.createConnection(uri, clientOptions).asPromise();
+  const conn = await mongoose
+    .createConnection(DATABASE_CONFIG.uri, DATABASE_CONFIG.options)
+    .asPromise();
   await conn.model('usuarios', usuarioSchema, 'usuariosSchema');
   console.log('Conectado ao Banco de Dados: Usuários.');
   return conn;
