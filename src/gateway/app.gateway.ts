@@ -132,8 +132,8 @@ export class AppGateway
 
   @SubscribeMessage('solicitar-usuarios')
   async handleSolicitarUsuarios(client: Socket) {
-    const todosClientes = await this.bdServicesService.todosUsuariosBanco();
-    client.emit('todos-usuarios', todosClientes);
+    const todosUsuarios = await this.bdServicesService.todosUsuariosBd();
+    client.emit('todos-usuarios', todosUsuarios);
   }
 
   @SubscribeMessage('Enviar Mensagem')
@@ -145,23 +145,8 @@ export class AppGateway
       await this.bdServicesService.enviandoMensagem(dados);
       client.emit('Mensagem Enviada', { success: true });
     } catch (error) {
+      this.logger.error('Erro ao enviar mensagem WhatsApp:', error);
       client.emit('Erro Mensagem', { error: error.message });
-    }
-  }
-
-  @SubscribeMessage('Obter Localizacao')
-  async handleObterLocalizacao(
-    client: Socket,
-    dados: {
-      entregadorNome: string;
-      localizacao: { latitude: number; longitude: number };
-    },
-  ) {
-    try {
-      await this.bdServicesService.obtendoLocalizacaoEntrega(dados);
-      client.emit('Localizacao Enviada', { success: true });
-    } catch (error) {
-      client.emit('Erro Localizacao', { error: error.message });
     }
   }
 
