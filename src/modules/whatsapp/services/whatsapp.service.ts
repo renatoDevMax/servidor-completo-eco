@@ -21,12 +21,13 @@ export class WhatsAppService implements OnModuleInit {
           '--disable-accelerated-2d-canvas',
           '--no-first-run',
           '--no-zygote',
+          '--single-process',
           '--disable-gpu',
         ],
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
       },
       authStrategy: new LocalAuth({
         clientId: 'ecoclean-client',
-        dataPath: '.wwebjs_auth',
       }),
     });
 
