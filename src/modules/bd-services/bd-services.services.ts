@@ -199,30 +199,49 @@ export class BdServicesService {
   }
 
   async atualizandoCliente(cliente: clientesTipo) {
-    console.log(cliente);
+    console.log('Processando cliente:', cliente.nome);
     const conexao = await connectToDatabase();
     const modelClientes = conexao.model(
       'clientesEco',
       clientesSchema,
       'clientesEco',
     );
-    const clienteGerado = new modelClientes(cliente);
-    const userCliente = await clienteGerado.updateOne(
-      { id: cliente.id },
-      {
-        $set: cliente,
-      },
-    );
-    if (userCliente.matchedCount === 0) {
-      console.log('Nenhum documento encontrado com esse ID.');
-    } else if (userCliente.modifiedCount === 0) {
-      console.log('Nenhuma modificação foi feita.');
-    } else {
-      console.log('Documento atualizado com sucesso.');
+
+    // Primeiro, tenta encontrar o cliente pelo nome
+    let clienteExistente = await modelClientes.findOne({ nome: cliente.nome });
+
+    // Se não encontrar pelo nome e tiver ID, tenta pelo ID (mantendo compatibilidade)
+    if (!clienteExistente && cliente.id) {
+      clienteExistente = await modelClientes.findOne({ id: cliente.id });
     }
 
+    // Se não encontrou o cliente, cria um novo
+    if (!clienteExistente) {
+      console.log(
+        'Cliente não encontrado. Criando novo cliente:',
+        cliente.nome,
+      );
+      const novoCliente = new modelClientes(cliente);
+      await novoCliente.save();
+      console.log('Novo cliente criado com sucesso!');
+    } else {
+      // Se encontrou, atualiza os dados
+      console.log('Atualizando cliente existente:', clienteExistente.nome);
+      const resultado = await modelClientes.updateOne(
+        { _id: clienteExistente._id },
+        { $set: cliente },
+      );
+
+      if (resultado.modifiedCount === 0) {
+        console.log('Nenhuma modificação necessária.');
+      } else {
+        console.log('Cliente atualizado com sucesso.');
+      }
+    }
+
+    // Retorna lista atualizada de clientes
     const todosClientes = await modelClientes.find({});
-    console.log('Pegando todos os Clientes do Banco de Dados.');
+    console.log('Total de clientes no banco:', todosClientes.length);
     return todosClientes;
   }
 
